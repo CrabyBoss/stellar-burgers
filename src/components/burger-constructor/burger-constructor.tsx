@@ -9,11 +9,16 @@ import {
 import {
   clearOrder,
   isOrderLoadingSelector,
-  orderSelector
+  orderSelector,
+  orderBurger
 } from '../../services/slices/order/slice';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { isAuthCheckedSelector } from '../../services/slices/user/slice';
-import { orderBurger } from '../../services/slices/order/slice';
+
+interface LocationState {
+  from?: Location;
+  orderData?: string[];
+}
 
 export const BurgerConstructor: FC = () => {
   const constructorItems = useSelector(burgerConstructorSelector);
@@ -21,24 +26,28 @@ export const BurgerConstructor: FC = () => {
   const orderModalData = useSelector(orderSelector);
 
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
 
   const isAuthenticated = useSelector(isAuthCheckedSelector);
 
   const onOrderClick = () => {
-    if (!isAuthenticated) {
-      navigate('/login');
-    }
-
     const { bun, ingredients } = constructorItems;
-    if (!constructorItems.bun || orderRequest) return;
+    if (!bun || orderRequest) return;
+
     const orderData: string[] = [
-      bun?._id!,
+      bun._id,
       ...ingredients.map((ingredient) => ingredient._id),
-      bun?._id!
+      bun._id
     ];
+
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: location, orderData } });
+      return;
+    }
     dispatch(orderBurger(orderData));
   };
+
   const closeOrderModal = () => {
     navigate('/', { replace: true });
     dispatch(clearOrder());
